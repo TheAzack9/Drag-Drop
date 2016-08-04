@@ -1,7 +1,7 @@
 bin
 obj
-x32*
-x64*
+Drag&Drop/Drag&Drop/x32*
+Drag&Drop/Drag&Drop/x64*
 *.aps
 *.docstates
 *.exe
