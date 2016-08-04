@@ -1,0 +1,29 @@
+#include <Windows.h>
+
+1 VERSIONINFO
+	FILEVERSION 3, 0, 0, 5
+	PRODUCTVERSION 3, 0, 0, 5
+	FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+	FILEFLAGS 0
+	FILEOS VOS_NT
+	FILETYPE VFT_DLL
+	BEGIN
+		BLOCK "StringFileInfo"
+		BEGIN
+			BLOCK "040904e4"
+			BEGIN
+				VALUE "Comments", "Plugin for Rainmeter to enable OLE Drag & Drop"
+				VALUE "CompanyName", "theAzack9"
+				VALUE "FileVersion", "3.0.0.5"
+				VALUE "InternalName", "Drag&Drop"
+				VALUE "LegalCopyright", "© 2016 - theAzack9"
+				VALUE "OriginalFilename", "Drag&Drop.dll"
+				VALUE "ProductName", "Rainmeter"
+				VALUE "ProductVersion", "3.3.1.2602"
+			END
+		END
+		BLOCK "VarFileInfo"
+		BEGIN
+			VALUE "Translation", 0x0409, 1252
+		END
+	END
