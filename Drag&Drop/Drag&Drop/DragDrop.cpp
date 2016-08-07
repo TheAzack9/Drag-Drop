@@ -54,8 +54,10 @@ PLUGIN_EXPORT void Initialize(void** data, void* rm)
 			}
 		}
 
-		RmLog(rm, LOG_ERROR, L"Invalid Parent!");
+		RmLogF(rm, LOG_ERROR, L"Invalid Parent in %s!", RmGetMeasureName(rm));
 	}
+
+
 }
 
 PLUGIN_EXPORT void Reload(void* data, void* rm, double* maxValue)
@@ -67,13 +69,15 @@ PLUGIN_EXPORT void Reload(void* data, void* rm, double* maxValue)
 	{
 		return;
 	}
-
+	child->enabled = true;
 	child->measureName = RmGetMeasureName(rm);
 	child->dropAction = RmReadString(rm, L"OnDropAction", L"");
+	if(child->dropAction.empty()) // For BWC
+		child->dropAction = RmReadString(rm, L"OnDroppedAction", L"");
 	child->enterAction = RmReadString(rm, L"OnEnterAction", L"");
 	child->leaveAction = RmReadString(rm, L"OnLeaveAction", L"");
 	child->overAction = RmReadString(rm, L"OnOverAction", L"");
-	child->filePath = RmReadPath(rm, L"FilePath", L"");
+	child->filePath = RmReadPath(rm, L"Path", L"");
 
 	LPCWSTR action = RmReadString(rm, L"Action", L"");
 	if (_wcsicmp(action, L"Move") == 0)				child->dragAction = Action::Move;
@@ -81,6 +85,12 @@ PLUGIN_EXPORT void Reload(void* data, void* rm, double* maxValue)
 	else if (_wcsicmp(action, L"Delete") == 0)		child->dragAction = Action::Delete;
 	else if (_wcsicmp(action, L"Shortcut") == 0)	child->dragAction = Action::Shortcut;
 	else if (_wcsicmp(action, L"Path") == 0)		child->dragAction = Action::Path;
+	else
+	{
+		if(_wcsicmp(action, L"None") != 0)
+			RmLogF(rm, LOG_ERROR, L"No Action defined, %s will be disabled!", RmGetMeasureName(rm));
+		child->enabled = false;
+	}
 
 	child->replaceIfExists = RmReadInt(rm, L"OverrideExisting", 0) != 0;
 	child->silent = RmReadInt(rm, L"Silent", 0) != 0;
@@ -88,7 +98,7 @@ PLUGIN_EXPORT void Reload(void* data, void* rm, double* maxValue)
 
 	if (child->filePath.empty() && (child->dragAction == Action::Move || child->dragAction == Action::Copy))
 	{
-		RmLog(rm, LOG_WARNING, (std::wstring(L"No path specified for ") + action + L" Please specify the location the Drag&Drop plugin should place the dropped file! Use the FilePath option.").c_str());
+		RmLogF(rm, LOG_WARNING, L"No path specified! Please specify the destination in the option Path! %s will be disabled!", action, RmGetMeasureName(rm));
 		child->enabled = false;
 		return;
 	}
@@ -144,11 +154,12 @@ PLUGIN_EXPORT double Update(void* data)
 	ChildMeasure* child = (ChildMeasure*)data;
 	if (!child->meter.empty() && child->enabled)
 	{
-		std::wstring bang = L"[!CommandMeasure " + child->measureName + L" \"SetBounds ";
+		//Shush, this is a secret bang that noone should know about >.> use [!SetOption Measure Bounds "X,Y,W,H"] instead :P
+		std::wstring bang = L"[!CommandMeasure " + std::wstring(child->measureName) + L" \"SetBounds ";
 		bang += L"[" + child->meter + L":X] ";
 		bang += L"[" + child->meter + L":Y] ";
 		bang += L"[" + child->meter + L":W] ";
-		bang += L"[" + child->meter + L":H]]\"";
+		bang += L"[" + child->meter + L":H]\"]";
 		RmExecute(child->skin, bang.c_str());
 	}
 	return 0.0;

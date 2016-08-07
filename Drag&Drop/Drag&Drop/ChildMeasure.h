@@ -2,6 +2,7 @@
 #include "ParentMeasure.h"
 #include <Windows.h>
 #include <string>
+#include "../API/RainmeterAPI.h"
 
 enum class Action {
 	Move,
@@ -37,6 +38,10 @@ struct ChildMeasure
 
 	bool ContainsPointL(POINTL pt)
 	{
-		return bounds.left <= pt.x && bounds.top <= pt.y && bounds.left + bounds.right >= pt.x && bounds.top + bounds.bottom >= pt.y;
+		RECT winRect;
+		if (GetWindowRect(RmGetSkinWindow(rm), &winRect)) {
+			return bounds.left + winRect.left <= pt.x && bounds.top + winRect.top <= pt.y && bounds.left + bounds.right + winRect.left >= pt.x && bounds.top + bounds.bottom + winRect.top >= pt.y;
+		}
+		else return false;
 	}
 };

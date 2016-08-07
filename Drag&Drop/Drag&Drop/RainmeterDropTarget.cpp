@@ -37,10 +37,12 @@ DropEffect RainmeterDropTarget::OnDragEnter(std::vector<std::wstring> files, DWO
 	{
 		for (auto child : parent->children)
 		{
+			if (!child->enabled)
+				continue;
 			if (child->ContainsPointL(mousePos) && !child->dropActive && !child->enterAction.empty())
 			{
 				child->dropActive = true;
-				int number = 0;
+				int number = 1;
 				if (child->spamAction) 
 					for (auto file : files) {
 						ExecuteDragBang(child->enterAction, child, file, mousePos, number);
@@ -61,11 +63,13 @@ DropEffect RainmeterDropTarget::OnDragOver(DWORD grfKeyState, const POINTL & mou
 	{
 		for (auto child : parent->children)
 		{
+			if (!child->enabled)
+				continue;
 			if (child->ContainsPointL(mousePos)) {
 				if (!child->dropActive && !child->enterAction.empty())
 				{
 					child->dropActive = true;
-					int number = 0;
+					int number = 1;
 					if (child->spamAction)
 						for (auto file : prevFiles) {
 							ExecuteDragBang(child->enterAction, child, file, mousePos, number);
@@ -78,7 +82,7 @@ DropEffect RainmeterDropTarget::OnDragOver(DWORD grfKeyState, const POINTL & mou
 				if (!child->overAction.empty())
 				{
 					child->dropActive = true;
-					int number = 0;
+					int number = 1;
 					if (child->spamAction)
 						for (auto file : prevFiles) {
 							ExecuteDragBang(child->overAction, child, file, mousePos, number);
@@ -92,7 +96,7 @@ DropEffect RainmeterDropTarget::OnDragOver(DWORD grfKeyState, const POINTL & mou
 			if (!child->ContainsPointL(mousePos) && child->dropActive)
 			{
 				child->dropActive = false;
-				int number = 0;
+				int number = 1;
 				if (!child->leaveAction.empty()) {
 					if (child->spamAction)
 						for (auto file : prevFiles) {
@@ -115,17 +119,18 @@ DropEffect RainmeterDropTarget::OnDragDrop(std::vector<std::wstring> files, DWOR
 	{
 		for (auto child : parent->children)
 		{
+			if (!child->enabled || !child->ContainsPointL(mousePos))
+				continue;
 			child->dropActive = false;
-			int number = 0;
-			if (!child->dropAction.empty()) {
-				if (child->spamAction)
-					for (auto file : files) {
-						ExecuteDragBang(child->dropAction, child, file, mousePos, number, true);
-						++number;
-					}
-				else
-					ExecuteDragBang(child->dropAction, child, files.front(), mousePos, number, true);
-			}
+			int number = 1;
+			if (child->spamAction)
+				for (auto file : files) {
+					ExecuteDragBang(child->dropAction, child, file, mousePos, number, true);
+					++number;
+				}
+			else
+				ExecuteDragBang(child->dropAction, child, files.front(), mousePos, number, true);
+			
 		}
 	}
 	prevFiles = files;
@@ -138,8 +143,10 @@ void RainmeterDropTarget::OnDragLeave(void)
 	{
 		for (auto child : parent->children)
 		{
+			if (!child->enabled)
+				continue;
 			child->dropActive = false;
-			int number = 0;
+			int number = 1;
 			if (!child->leaveAction.empty()) {
 				POINTL mousePos = { mousePos.x = INT_MIN, mousePos.y = INT_MIN };
 				if (child->spamAction)
@@ -160,7 +167,7 @@ bool RainmeterDropTarget::AllowDrop(const POINTL & pt)
 	{
 		for (auto child : parent->children)
 		{
-			if (child->enabled && child->ContainsPointL(pt) && !(child->overAction.empty() && child->leaveAction.empty() && child->enterAction.empty() && child->dropAction.empty())) {
+			if (child->enabled && child->ContainsPointL(pt)) {
 				return true;
 			}
 		}
@@ -285,10 +292,10 @@ void RainmeterDropTarget::ExecuteDragBang(std::wstring bang, ChildMeasure* child
 	dragDropBang = HelperFunctions::wstringReplace(dragDropBang, L"$MouseX$", std::to_wstring(mousePos.x));
 	dragDropBang = HelperFunctions::wstringReplace(dragDropBang, L"$MouseY$", std::to_wstring(mousePos.y));
 
+	if (isDrop)
+		child->previousFile = file;
 	//Finally execute the bang... puh, that was some really hard work 
 	RmExecute(child->skin, dragDropBang.c_str());
-	if(isDrop)
-	child->previousFile = file;
 }
 
 DropEffect RainmeterDropTarget::GetDropEffect()
@@ -298,7 +305,7 @@ DropEffect RainmeterDropTarget::GetDropEffect()
 	{
 		for (auto child : parent->children)
 		{
-			if (!child->enabled || (child->overAction.empty() && child->leaveAction.empty() && child->enterAction.empty() && child->dropAction.empty()))
+			if (!child->enabled)
 				continue;
 			if (child->dragAction == Action::Copy || child->dragAction == Action::Shortcut)
 				effect = DropEffect::Copy;
